@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TRUST. — Scroll Experience</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --beige: #F5F0E8;
+      --cream: #EDE6D6;
+      --charcoal: #2C2A25;
+      --gold: #B5A898;
+      --sage: #C8D5B9;
+      --blush: #E8C4C0;
+      --stone: #C4BDB3;
+      --lavender: #DDD8EE;
+      --muted: #7A7568;
+      --border: #D9D2C4;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      min-height: 100%;
+      font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: var(--beige);
+      color: var(--charcoal);
+      overflow-x: hidden;
+    }
+
+    body.ready #c,
+    body.ready #overlay,
+    body.ready #navbar,
+    body.ready #progress-nav {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    #c,
+    #overlay,
+    #navbar,
+    #progress-nav {
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.6s ease, visibility 0.6s ease;
+    }
+
+    #c {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 0;
+      width: 100vw;
+      height: 100vh;
+      display: block;
+    }
+
+    #scroll-container {
+      height: 600vh;
+      position: relative;
+      z-index: 1;
+    }
+
+    #overlay {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    #navbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      padding: 20px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.35s ease, backdrop-filter 0.35s ease, border-color 0.35s ease;
+      border-bottom: 0.5px solid transparent;
+    }
+
+    #navbar.scrolled {
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      background: rgba(245,240,232,0.85);
+      border-bottom-color: var(--border);
+    }
+
+    .brand {
+      font-size: 17px;
+      font-weight: 500;
+      letter-spacing: 0.16em;
+      color: var(--charcoal);
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .nav-center {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      color: var(--muted);
+      font-size: 13px;
+      letter-spacing: 0.02em;
+    }
+
+    .nav-center a {
+      text-decoration: none;
+      color: inherit;
+      pointer-events: auto;
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    #scene-indicator {
+      font-size: 13px;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+      min-width: 64px;
+      text-align: right;
+    }
+
+    .pill {
+      border: none;
+      border-radius: 100px;
+      padding: 10px 16px;
+      background: var(--charcoal);
+      color: var(--beige);
+      font-size: 12px;
+      letter-spacing: 0.02em;
+      pointer-events: auto;
+      cursor: pointer;
+    }
+
+    .panel {
+      position: absolute;
+      opacity: 0;
+      transform: translateY(16px);
+      max-width: 440px;
+      will-change: opacity, transform;
+    }
+
+    .panel .tag {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+      margin-bottom: 18px;
+    }
+
+    .panel h1,
+    .panel h2 {
+      margin: 0;
+      color: var(--charcoal);
+      letter-spacing: -0.02em;
+      font-weight: 500;
+    }
+
+    .panel h1 {
+      font-size: clamp(40px, 5vw, 52px);
+      line-height: 1.02;
+    }
+
+    .panel h2 {
+      font-size: clamp(34px, 4vw, 42px);
+      line-height: 1.08;
+    }
+
+    .panel em {
+      color: var(--gold);
+      font-style: normal;
+    }
+
+    .panel .sub {
+      font-size: 15px;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-top: 12px;
+      max-width: 320px;
+    }
+
+    .panel .price {
+      font-size: 28px;
+      font-weight: 500;
+      color: var(--charcoal);
+      margin-top: 16px;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 24px;
+      pointer-events: auto;
+    }
+
+    .btn {
+      border-radius: 100px;
+      padding: 12px 24px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: transform 0.2s ease, opacity 0.2s ease, background 0.25s ease, color 0.25s ease;
+    }
+
+    .btn:hover { transform: translateY(-1px); }
+
+    .btn.primary {
+      border: 1px solid var(--charcoal);
+      background: var(--charcoal);
+      color: var(--beige);
+    }
+
+    .btn.secondary {
+      border: 0.5px solid var(--border);
+      color: var(--charcoal);
+      background: transparent;
+    }
+
+    #panel-1 { left: 8%; top: 35%; }
+    #panel-2 { right: 8%; top: 40%; text-align: left; }
+    #panel-3 { left: 8%; top: 38%; }
+    #panel-4 { right: 8%; top: 42%; text-align: left; }
+    #panel-5 {
+      left: 50%;
+      top: 30%;
+      transform: translate(-50%, 16px);
+      text-align: center;
+      max-width: 620px;
+    }
+
+    #panel-5 .sub { margin-left: auto; margin-right: auto; }
+    #panel-5 .actions { justify-content: center; }
+
+    #progress-nav {
+      position: fixed;
+      right: 32px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 120;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      pointer-events: auto;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: transparent;
+      cursor: pointer;
+      padding: 0;
+      transition: all 0.25s ease;
+    }
+
+    .dot.active {
+      background: var(--charcoal);
+      border-color: var(--charcoal);
+      transform: scale(1.18);
+    }
+
+    #loader {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: var(--charcoal);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    #loader .logo {
+      font-size: 28px;
+      letter-spacing: 0.2em;
+      color: var(--beige);
+      font-weight: 500;
+      text-transform: uppercase;
+    }
+
+    .loader-track {
+      width: 200px;
+      height: 2px;
+      background: rgba(245,240,232,0.2);
+      overflow: hidden;
+    }
+
+    .loader-fill {
+      width: 0%;
+      height: 100%;
+      background: var(--gold);
+      transform-origin: left center;
+    }
+
+    #mobile-fallback {
+      display: none;
+      position: relative;
+      z-index: 5;
+    }
+
+    .m-section {
+      min-height: 100vh;
+      padding: 100px 24px 56px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      opacity: 0;
+      transform: translateY(22px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+
+    .m-section.in {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .m-section .tag {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: var(--muted);
+      margin-bottom: 16px;
+    }
+
+    .m-section h2 {
+      margin: 0;
+      font-size: 34px;
+      line-height: 1.08;
+      letter-spacing: -0.02em;
+      color: var(--charcoal);
+      font-weight: 500;
+    }
+
+    .m-section .sub {
+      margin-top: 12px;
+      color: var(--muted);
+      line-height: 1.6;
+      max-width: 320px;
+    }
+
+    .m-section .price {
+      margin-top: 14px;
+      font-size: 26px;
+      font-weight: 500;
+    }
+
+    .m-actions {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 1100px) {
+      #navbar { padding: 18px 20px; }
+      .nav-center { display: none; }
+      #progress-nav { right: 16px; }
+      #panel-1, #panel-2, #panel-3, #panel-4 {
+        left: 6%;
+        right: 6%;
+        top: auto;
+        bottom: 12%;
+      }
+      #panel-5 {
+        width: min(90vw, 620px);
+        top: 24%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="loader" aria-hidden="true">
+    <div class="logo">TRUST.</div>
+    <div class="loader-track"><div class="loader-fill" id="loader-fill"></div></div>
+  </div>
+
+  <header id="navbar">
+    <div class="brand">TRUST.</div>
+    <nav class="nav-center" aria-label="Primary">
+      <a href="javascript:void(0)">Shop</a>
+      <a href="javascript:void(0)">Drops</a>
+      <a href="javascript:void(0)">About</a>
+    </nav>
+    <div class="nav-right">
+      <div id="scene-indicator">01 / 05</div>
+      <button class="pill" type="button">Drop alerts</button>
+    </div>
+  </header>
+
+  <div id="progress-nav" aria-label="Scene progress">
+    <button class="dot active" data-scene="0" aria-label="Go to scene 1"></button>
+    <button class="dot" data-scene="1" aria-label="Go to scene 2"></button>
+    <button class="dot" data-scene="2" aria-label="Go to scene 3"></button>
+    <button class="dot" data-scene="3" aria-label="Go to scene 4"></button>
+    <button class="dot" data-scene="4" aria-label="Go to scene 5"></button>
+  </div>
+
+  <canvas id="c"></canvas>
+
+  <div id="overlay">
+    <section class="panel" id="panel-1">
+      <div class="tag">SS 2026 — DROP 001</div>
+      <h1>Built<br><em>different.</em></h1>
+      <div class="sub">Money mindset. Wear your philosophy.</div>
+      <div class="actions">
+        <button class="btn primary" type="button">Shop now</button>
+        <button class="btn secondary" type="button">Our story</button>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-2">
+      <div class="tag">DROP 001 — 02 OF 09</div>
+      <h2>Cash Flow Is Character</h2>
+      <div class="sub">48 units remaining.</div>
+      <div class="price">€65</div>
+      <div class="actions">
+        <button class="btn primary" type="button">Add to cart</button>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-3">
+      <div class="tag">DROP 001 — 03 OF 09</div>
+      <h2>The Market Doesn't Care</h2>
+      <div class="sub">Wear the reminder.</div>
+      <div class="price">€65</div>
+      <div class="actions">
+        <button class="btn primary" type="button">Add to cart</button>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-4">
+      <div class="tag">DROP 001 — 04 OF 09</div>
+      <h2>Assets Over Aesthetics</h2>
+      <div class="sub">New drop. Limited run.</div>
+      <div class="price">€65</div>
+      <div class="actions">
+        <button class="btn primary" type="button">Add to cart</button>
+      </div>
+    </section>
+
+    <section class="panel" id="panel-5">
+      <div class="tag">FINAL PIECE</div>
+      <h2>Buy the Dip in Yourself</h2>
+      <div class="sub">Drop 001 closing piece. 65 units only.</div>
+      <div class="price">€65</div>
+      <div class="actions">
+        <button class="btn primary" type="button">Shop Drop 001</button>
+        <button class="btn secondary" type="button">Get Drop 002 alerts</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="scroll-container"></div>
+
+  <main id="mobile-fallback" aria-label="Mobile fallback experience">
+    <section class="m-section" style="background:#C8D5B9;">
+      <div class="tag">SS 2026 — DROP 001</div>
+      <h2>Built <em style="color:#B5A898;font-style:normal;">different.</em></h2>
+      <div class="sub">Money mindset. Wear your philosophy.</div>
+      <div class="m-actions">
+        <button class="btn primary" type="button">Shop now</button>
+        <button class="btn secondary" type="button">Our story</button>
+      </div>
+    </section>
+    <section class="m-section" style="background:#E8C4C0;">
+      <div class="tag">DROP 001 — 02 OF 09</div>
+      <h2>Cash Flow Is Character</h2>
+      <div class="sub">48 units remaining.</div>
+      <div class="price">€65</div>
+      <div class="m-actions"><button class="btn primary" type="button">Add to cart</button></div>
+    </section>
+    <section class="m-section" style="background:#C4BDB3;">
+      <div class="tag">DROP 001 — 03 OF 09</div>
+      <h2>The Market Doesn't Care</h2>
+      <div class="sub">Wear the reminder.</div>
+      <div class="price">€65</div>
+      <div class="m-actions"><button class="btn primary" type="button">Add to cart</button></div>
+    </section>
+    <section class="m-section" style="background:#DDD8EE;">
+      <div class="tag">DROP 001 — 04 OF 09</div>
+      <h2>Assets Over Aesthetics</h2>
+      <div class="sub">New drop. Limited run.</div>
+      <div class="price">€65</div>
+      <div class="m-actions"><button class="btn primary" type="button">Add to cart</button></div>
+    </section>
+    <section class="m-section" style="background:#EDE6D6;">
+      <div class="tag">FINAL PIECE</div>
+      <h2>Buy the Dip in Yourself</h2>
+      <div class="sub">Drop 001 closing piece. 65 units only.</div>
+      <div class="price">€65</div>
+      <div class="m-actions">
+        <button class="btn primary" type="button">Shop Drop 001</button>
+        <button class="btn secondary" type="button">Get Drop 002 alerts</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+  <script>
+    (function () {
+      const isMobile = window.innerWidth < 768;
+      const loaderFill = document.getElementById('loader-fill');
+      const loader = document.getElementById('loader');
+      const navbar = document.getElementById('navbar');
+      const sceneIndicator = document.getElementById('scene-indicator');
+      const dots = Array.from(document.querySelectorAll('.dot'));
+
+      gsap.to(loaderFill, { width: '100%', duration: 2, ease: 'power2.inOut' });
+
+      if (isMobile) {
+        document.getElementById('c').style.display = 'none';
+        document.getElementById('overlay').style.display = 'none';
+        document.getElementById('scroll-container').style.display = 'none';
+        document.getElementById('progress-nav').style.display = 'none';
+
+        const mobile = document.getElementById('mobile-fallback');
+        mobile.style.display = 'block';
+        navbar.style.opacity = '1';
+        navbar.style.visibility = 'visible';
+
+        const observer = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) entry.target.classList.add('in');
+          });
+        }, { threshold: 0.2 });
+
+        document.querySelectorAll('.m-section').forEach(sec => observer.observe(sec));
+
+        window.addEventListener('scroll', () => {
+          navbar.classList.toggle('scrolled', window.scrollY > 50);
+          const sections = Array.from(document.querySelectorAll('.m-section'));
+          let idx = 0;
+          const center = window.scrollY + window.innerHeight * 0.45;
+          sections.forEach((s, i) => {
+            const top = s.offsetTop;
+            const bottom = top + s.offsetHeight;
+            if (center >= top && center < bottom) idx = i;
+          });
+          sceneIndicator.textContent = String(idx + 1).padStart(2, '0') + ' / 05';
+        }, { passive: true });
+
+        setTimeout(() => {
+          gsap.to(loader, {
+            opacity: 0,
+            duration: 0.7,
+            ease: 'power2.out',
+            onComplete: () => loader.remove()
+          });
+          document.body.classList.add('ready');
+        }, 2000);
+
+        return;
+      }
+
+      gsap.registerPlugin(ScrollTrigger);
+
+      const canvas = document.getElementById('c');
+      const scene = new THREE.Scene();
+      scene.fog = new THREE.Fog(0xF5F0E8, 8, 22);
+
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setClearColor(0xF5F0E8, 1);
+      renderer.outputEncoding = THREE.sRGBEncoding;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.1;
+
+      const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.set(0, 0, 8);
+
+      const ambient = new THREE.AmbientLight(0xFFF8F0, 0.8);
+      const dir1 = new THREE.DirectionalLight(0xFFFFFF, 1.4);
+      dir1.position.set(5, 8, 5);
+      const dir2 = new THREE.DirectionalLight(0xC8D5B9, 0.6);
+      dir2.position.set(-6, 3, -3);
+      const p1 = new THREE.PointLight(0xE8C4C0, 1.2);
+      p1.position.set(3, 4, 3);
+      const p2 = new THREE.PointLight(0xB5A898, 0.8);
+      p2.position.set(-3, -2, 4);
+      scene.add(ambient, dir1, dir2, p1, p2);
+
+      function buildShirt(hexColor, line1, line2) {
+        const group = new THREE.Group();
+        const c = new THREE.Color(hexColor);
+        const dark = new THREE.Color(hexColor).multiplyScalar(0.82);
+        const mid = new THREE.Color(hexColor).multiplyScalar(0.91);
+
+        const mat = (col) => new THREE.MeshStandardMaterial({
+          color: col,
+          roughness: 0.85,
+          metalness: 0.0
+        });
+
+        const tc = document.createElement('canvas');
+        tc.width = 512;
+        tc.height = 640;
+        const ctx = tc.getContext('2d');
+        ctx.fillStyle = '#' + c.getHexString();
+        ctx.fillRect(0, 0, 512, 640);
+        ctx.fillStyle = 'rgba(44,42,37,0.80)';
+        ctx.font = '500 42px Arial';
+        ctx.textAlign = 'center';
+        if (line1) ctx.fillText(line1, 256, 290);
+        if (line2) ctx.fillText(line2, 256, 342);
+        ctx.fillStyle = 'rgba(44,42,37,0.40)';
+        ctx.font = '300 20px Arial';
+        ctx.fillText('TRUST.', 256, 415);
+
+        const tex = new THREE.CanvasTexture(tc);
+        tex.encoding = THREE.sRGBEncoding;
+
+        const front = new THREE.Mesh(
+          new THREE.PlaneGeometry(2.0, 2.4),
+          new THREE.MeshStandardMaterial({ map: tex, roughness: 0.85, metalness: 0.0 })
+        );
+        front.position.z = 0.16;
+        group.add(front);
+
+        const back = new THREE.Mesh(
+          new THREE.PlaneGeometry(2.0, 2.4),
+          mat(mid)
+        );
+        back.position.z = -0.16;
+        back.rotation.y = Math.PI;
+        group.add(back);
+
+        const sideGeo = new THREE.BoxGeometry(0.32, 2.4, 0.32);
+        const sL = new THREE.Mesh(sideGeo, mat(dark));
+        sL.position.set(-1.0, 0, 0);
+        const sR = new THREE.Mesh(sideGeo, mat(dark));
+        sR.position.set(1.0, 0, 0);
+        group.add(sL, sR);
+
+        const bot = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.14, 0.32), mat(dark));
+        bot.position.set(0, -1.2, 0);
+        group.add(bot);
+
+        const slL = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.50, 0.28), mat(mid));
+        slL.position.set(-1.46, 0.90, 0);
+        slL.rotation.z = 0.28;
+        group.add(slL);
+
+        const cL = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.26, 0.30), mat(dark));
+        cL.position.set(-1.82, 0.60, 0);
+        group.add(cL);
+
+        const slR = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.50, 0.28), mat(mid));
+        slR.position.set(1.46, 0.90, 0);
+        slR.rotation.z = -0.28;
+        group.add(slR);
+
+        const cR = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.26, 0.30), mat(dark));
+        cR.position.set(1.82, 0.60, 0);
+        group.add(cR);
+
+        const shGeo = new THREE.BoxGeometry(0.55, 0.20, 0.32);
+        const shL = new THREE.Mesh(shGeo, mat(c));
+        shL.position.set(-0.72, 1.1, 0);
+        const shR = new THREE.Mesh(shGeo, mat(c));
+        shR.position.set(0.72, 1.1, 0);
+        group.add(shL, shR);
+
+        const collar = new THREE.Mesh(
+          new THREE.TorusGeometry(0.34, 0.075, 10, 28, Math.PI),
+          mat(dark)
+        );
+        collar.position.set(0, 1.12, 0.14);
+        collar.rotation.x = -0.1;
+        group.add(collar);
+
+        return group;
+      }
+
+      const shirts = [
+        buildShirt('#C8D5B9', 'BUILT NOT', 'BORROWED'),
+        buildShirt('#E8C4C0', 'CASH FLOW IS', 'CHARACTER'),
+        buildShirt('#C4BDB3', 'THE MARKET', "DOESN'T CARE"),
+        buildShirt('#DDD8EE', 'ASSETS OVER', 'AESTHETICS'),
+        buildShirt('#EDE6D6', 'BUY THE DIP', 'IN YOURSELF')
+      ];
+
+      shirts[0].position.set(0, 0, 0);
+      shirts[1].position.set(2.5, -0.5, -6);
+      shirts[2].position.set(-2.5, 0.3, -12);
+      shirts[3].position.set(1.5, -0.3, -18);
+      shirts[4].position.set(0, 0, -24);
+      shirts.forEach(s => scene.add(s));
+
+      const particleCount = 200;
+      const pos = new Float32Array(particleCount * 3);
+      const baseY = new Float32Array(particleCount);
+      for (let i = 0; i < particleCount; i++) {
+        const ix = i * 3;
+        pos[ix] = (Math.random() - 0.5) * 16;
+        pos[ix + 1] = (Math.random() - 0.5) * 12;
+        pos[ix + 2] = -28 + Math.random() * 30;
+        baseY[i] = pos[ix + 1];
+      }
+      const pg = new THREE.BufferGeometry();
+      pg.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      const pm = new THREE.PointsMaterial({
+        size: 0.025,
+        color: 0xB5A898,
+        transparent: true,
+        opacity: 0.6
+      });
+      const particles = new THREE.Points(pg, pm);
+      scene.add(particles);
+
+      const camPath = [
+        { pos: { x: 0, y: 0.3, z: 5.5 }, look: { x: 0, y: 0, z: 0 } },
+        { pos: { x: 1.5, y: 0, z: -2 }, look: { x: 2.5, y: -0.5, z: -6 } },
+        { pos: { x: -1.5, y: 0.2, z: -8 }, look: { x: -2.5, y: 0.3, z: -12 } },
+        { pos: { x: 1.0, y: 0, z: -14 }, look: { x: 1.5, y: -0.3, z: -18 } },
+        { pos: { x: 0, y: 0, z: -20 }, look: { x: 0, y: 0, z: -24 } }
+      ];
+
+      const proxy = { progress: 0 };
+      ScrollTrigger.create({
+        trigger: '#scroll-container',
+        start: 'top top',
+        end: 'bottom bottom',
+        scrub: 1.5,
+        onUpdate: (self) => {
+          proxy.progress = self.progress;
+          updateUiForProgress(self.progress);
+        }
+      });
+
+      function panelTween(id, inP, outP) {
+        const el = document.getElementById(id);
+        gsap.set(el, { opacity: 0, y: 16 });
+        ScrollTrigger.create({
+          trigger: '#scroll-container',
+          start: 'top top',
+          end: 'bottom bottom',
+          scrub: true,
+          onUpdate: (self) => {
+            const p = self.progress;
+            let o = 0;
+            let y = 16;
+
+            const inEnd = inP + 0.04;
+            const outStart = outP - 0.04;
+
+            if (p >= inP && p <= inEnd) {
+              const t = (p - inP) / (inEnd - inP);
+              o = t;
+              y = 16 * (1 - t);
+            } else if (p > inEnd && p < outStart) {
+              o = 1;
+              y = 0;
+            } else if (p >= outStart && p <= outP) {
+              const t = (p - outStart) / (outP - outStart);
+              o = 1 - t;
+              y = 16 * t;
+            }
+
+            gsap.set(el, { opacity: o, y: y });
+          }
+        });
+      }
+
+      panelTween('panel-1', 0.02, 0.18);
+      panelTween('panel-2', 0.22, 0.38);
+      panelTween('panel-3', 0.42, 0.58);
+      panelTween('panel-4', 0.62, 0.78);
+
+      const panel5 = document.getElementById('panel-5');
+      gsap.set(panel5, { opacity: 0, y: 16, xPercent: -50 });
+      ScrollTrigger.create({
+        trigger: '#scroll-container',
+        start: 'top top',
+        end: 'bottom bottom',
+        scrub: true,
+        onUpdate: (self) => {
+          const p = self.progress;
+          const start = 0.82;
+          const end = 0.9;
+          let o = 0;
+          let y = 16;
+          if (p >= start) {
+            const t = Math.min((p - start) / (end - start), 1);
+            o = t;
+            y = 16 * (1 - t);
+          }
+          gsap.set(panel5, { opacity: o, y: y, xPercent: -50 });
+        }
+      });
+
+      function updateUiForProgress(progress) {
+        const index = Math.min(4, Math.floor(progress * 5));
+        sceneIndicator.textContent = String(index + 1).padStart(2, '0') + ' / 05';
+        dots.forEach((d, i) => d.classList.toggle('active', i === index));
+      }
+
+      dots.forEach((dot, i) => {
+        dot.addEventListener('click', () => {
+          const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+          const targetP = i / 4;
+          gsap.to(window, {
+            scrollTo: { y: maxScroll * targetP, autoKill: false },
+            duration: 1,
+            ease: 'power2.inOut'
+          });
+        });
+      });
+
+      const mouse = { x: 0, y: 0 };
+      window.addEventListener('mousemove', (e) => {
+        mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -((e.clientY / window.innerHeight) * 2 - 1);
+      });
+
+      window.addEventListener('scroll', () => {
+        navbar.classList.toggle('scrolled', window.scrollY > 50);
+      }, { passive: true });
+
+      const speeds = [0.004, 0.003, 0.005, 0.003, 0.004];
+      const lookTarget = new THREE.Vector3();
+      let time = 0;
+
+      function animate() {
+        requestAnimationFrame(animate);
+        time += 0.016;
+
+        shirts.forEach((s, i) => {
+          s.rotation.y += speeds[i];
+          s.position.y += Math.sin(time * 0.8 + i) * 0.0004;
+        });
+
+        const scaled = proxy.progress * (camPath.length - 1);
+        const i0 = Math.floor(scaled);
+        const i1 = Math.min(i0 + 1, camPath.length - 1);
+        const t = scaled - i0;
+
+        const from = camPath[i0];
+        const to = camPath[i1];
+
+        const baseX = THREE.MathUtils.lerp(from.pos.x, to.pos.x, t);
+        const baseY = THREE.MathUtils.lerp(from.pos.y, to.pos.y, t);
+        const baseZ = THREE.MathUtils.lerp(from.pos.z, to.pos.z, t);
+
+        camera.position.z = baseZ;
+        camera.position.x += (baseX + mouse.x * 0.3 - camera.position.x) * 0.02;
+        camera.position.y += (baseY + mouse.y * 0.15 - camera.position.y) * 0.02;
+
+        lookTarget.set(
+          THREE.MathUtils.lerp(from.look.x, to.look.x, t),
+          THREE.MathUtils.lerp(from.look.y, to.look.y, t),
+          THREE.MathUtils.lerp(from.look.z, to.look.z, t)
+        );
+        camera.lookAt(lookTarget);
+
+        particles.rotation.y += 0.0003;
+        const arr = particles.geometry.attributes.position.array;
+        for (let i = 0; i < particleCount; i++) {
+          const idx = i * 3 + 1;
+          arr[idx] = baseY[i] + Math.sin(time + i) * 0.0002;
+        }
+        particles.geometry.attributes.position.needsUpdate = true;
+
+        renderer.render(scene, camera);
+      }
+
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      });
+
+      setTimeout(() => {
+        gsap.to(loader, {
+          opacity: 0,
+          duration: 0.75,
+          ease: 'power2.out',
+          onComplete: () => {
+            loader.remove();
+            document.body.classList.add('ready');
+          }
+        });
+      }, 2000);
+
+      animate();
+    })();
+  </script>
+</body>
+</html>
